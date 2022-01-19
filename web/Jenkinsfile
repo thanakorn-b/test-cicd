@@ -29,7 +29,7 @@ pipeline {
                     cd ${env.DEST_PROJ}
 
                     docker build --rm \
-                    -t ${env.IMAGE}:develop \
+                    -t ${env.IMAGE}:master \
                     -t ${env.IMAGE}:${BUILD_NUMBER} \
                     .
                 """
@@ -40,7 +40,7 @@ pipeline {
             steps {
                 withDockerRegistry(credentialsId: 'dokcerHub', url: env.REGISTRY) {
                     sh """
-                        docker push ${env.IMAGE}:develop
+                        docker push ${env.IMAGE}:master
                         docker push ${env.IMAGE}:${BUILD_NUMBER}
                     """
                 }
