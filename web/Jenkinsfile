@@ -1,0 +1,70 @@
+pipeline {
+    agent any
+
+    options {
+        ansiColor('xterm')
+    }
+
+    environment {
+        DEST_PROJ = 'web/'
+        DEST_DIR = 'test-cicd/'
+        IMAGE = "thangkub/${SERVICE_NAME}"
+        REGISTRY = 'https://hub.docker.com/'
+        REGISTRY_CREDENTIAL = 'dockerhub'
+        SERVICE_NAME = 'test-cicd-web'
+        SERVER = '172.31.20.183'
+        USERNAME_SERVER = 'root'
+    }
+
+    stages {
+        stage('Unit tests & Static Analysis') {
+            steps {
+                sh 'echo "🚨 Unit tests should be added."'
+            }
+        }
+
+        stage('Build docker image') {
+            steps {
+                sh """
+                    cd ${env.DEST_PROJ}
+
+                    docker build --rm \
+                    -t ${env.IMAGE}:develop \
+                    -t ${env.IMAGE}:${BUILD_NUMBER} \
+                    .
+                """
+            }
+        }
+
+        stage('Push docker image') {
+            steps {
+                withDockerRegistry(credentialsId: 'dokcerHub', url: env.REGISTRY) {
+                    sh """
+                        docker push ${env.IMAGE}:develop
+                        docker push ${env.IMAGE}:${BUILD_NUMBER}
+                    """
+                }
+            }
+        }
+
+        stage('Deploy to server') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'SSH_PRIVATE_KEY', keyFileVariable: 'SSH_TEST_CICD_SERVER')]) {
+                         withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                            sh """
+                                ssh -i $SSH_TEST_CICD_SERVER -oStrictHostKeyChecking=no -t ${USERNAME_SERVER}@${SERVER} \"
+                                    cd ${DEST_DIR}
+                                    docker login -u $USERNAME -p $PASSWORD ${REGISTRY}
+                                    docker-compose pull && \
+                                    docker-compose up  -d
+                                \"
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+}
