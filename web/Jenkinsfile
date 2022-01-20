@@ -51,7 +51,7 @@ pipeline {
             steps {
                 script {
                     withCredentials([sshUserPrivateKey(credentialsId: 'SSH_PRIVATE_KEY', keyFileVariable: 'SSH_TEST_CICD_SERVER')]) {
-                         withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                         withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
                             sh """
                                 ssh -i $SSH_TEST_CICD_SERVER -oStrictHostKeyChecking=no -t ${USERNAME_SERVER}@${SERVER} \"
                                     cd ${DEST_DIR}
